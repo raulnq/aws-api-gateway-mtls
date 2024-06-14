@@ -1,0 +1,44 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  SAM
+
+Resources:
+
+  MyApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      DisableExecuteApiEndpoint: true
+
+      StageName: Prod
+      Domain:
+        DomainName: <MY_DOMAIN_NAME>
+        CertificateArn: <MY_CERTIFICATE_ARN>
+        MutualTlsAuthentication:
+          TruststoreUri: s3://mys3buckettruststore/root-ca-cert.pem
+        Route53:
+          HostedZoneId: <MY_HOSTED_ZONE_ID>
+
+  MyApiFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Timeout: 60
+      MemorySize: 512
+      Tracing: Active
+      Runtime: dotnet8
+      Architectures:
+        - x86_64    
+      Handler: MyLambda::MyLambda.Function::FunctionHandler
+      CodeUri: ./src/MyLambda/
+      Events:
+        Get:
+          Type: Api
+          Properties:
+            RestApiId: !Ref MyApi
+            Path: /hello-world
+            Method: get
+
+Outputs:
+  MyApiEndpoint:
+    Description: "API domain name endpoint"
+    Value: "https://<MY_DOMAIN_NAME>/hello-world"
